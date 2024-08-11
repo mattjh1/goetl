@@ -2,7 +2,7 @@ package load
 
 import (
 	"context"
-	"log"
+	"github.com/mattjh1/goetl/config/logger"
   "github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/vectorstores/redisvector"
 	"github.com/tmc/langchaingo/llms"
@@ -13,32 +13,32 @@ import (
 )
 
 type RedisDB struct {
-    client *redisvector.RueidisClient
-    ctx    context.Context
+    ctx        context.Context
+    config     *config.RedisConfig
+    embedder   *redisvector.Store
 }
 
-func NewRedisDB(client *redisvector.RueidisClient, ctx context.Context) *RedisDB {
-	return &RedisDB{client: client, ctx: ctx}
+// NewRedisDB initializes and returns a RedisDB instance
+func NewRedisDB(redisConfig *config.RedisConfig, ctx context.Context, model *embeddings.EmbedderImpl) (*RedisDB, error) {
+    embedder, err := redisvector.New(ctx,
+        redisvector.WithConnectionURL(redisConfig.URL),
+        redisvector.WithIndexName(redisConfig.Index, true),
+        redisvector.WithEmbedder(model),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    return &RedisDB{
+        ctx:      ctx,
+        config:   redisConfig,
+        embedder: embedder,
+    }, nil
 }
 
-func (r *RedisDB) InsertEmbedding(docs []schema.Document, id string, cfg *config.Config) error {
-	// TODO replace with data from config 
-	redisURL := "redis://127.0.0.1:6379"
-	index := "test_redis_vectorstore"
-
-	_, e := getEmbedding(cfg.EmbModelID, cfg.OllamaAPIBase)
-	store, err := redisvector.New(r.ctx,
-	redisvector.WithConnectionURL(redisURL),
-	redisvector.WithIndexName(index, true),
-	redisvector.WithEmbedder(e),
-)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	_, err = store.AddDocuments(r.ctx, docs)
-
-  return err
+func (r *RedisDB) InsertEmbedding(docs []schema.Document, id string) error {
+    _, err := r.embedder.AddDocuments(r.ctx, docs)
+    return err
 }
 
 func getEmbedding(model string, connectionStr ...string) (llms.Model, *embeddings.EmbedderImpl) {
@@ -48,12 +48,12 @@ func getEmbedding(model string, connectionStr ...string) (llms.Model, *embedding
 	}
 	llm, err := ollama.New(opts...)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	e, err := embeddings.NewEmbedder(llm)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 	return llms.Model(llm), e
 }

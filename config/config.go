@@ -8,33 +8,16 @@ import (
     "github.com/spf13/viper"
 )
 
-type LLMSettings struct {
-    Provider    string  `mapstructure:"provider"`
-    Model       string  `mapstructure:"model"`
-    Temperature float64 `mapstructure:"temperature"`
-}
-
-type ProviderConfig struct {
-    BaseURL string `mapstructure:"base_url"`
-    APIKey  string `mapstructure:"api_key"`
-}
-
 type Config struct {
-    Mode              string                    `mapstructure:"mode"`
-    LLMSettings       LLMSettings               `mapstructure:"llm_settings"`
-    ProjectName       string                    `mapstructure:"project_name"`
-    APIStr            string                    `mapstructure:"api_str"`
-    SourcePath        string                    `mapstructure:"source_path"`
-		TikaServerURL			string										`mapstructure:"tika_server_url"`
-    OpenRouterAPIBase string                    `mapstructure:"openrouter_api_base"`
-    OpenRouterAPIKey  string                    `mapstructure:"openrouter_api_key"`
-    OllamaAPIBase     string                    `mapstructure:"ollama_api_base"`
-    EmbModelID        string                    `mapstructure:"emb_model_id"`
-    Neo4jURI          string                    `mapstructure:"neo4j_uri"`
-    Neo4jUsername     string                    `mapstructure:"neo4j_username"`
-    Neo4jPassword     string                    `mapstructure:"neo4j_password"`
-    Providers         map[string]ProviderConfig `mapstructure:"providers"`
-    BackendCORSOrigins []string                 `mapstructure:"backend_cors_origins"`
+    Mode         string        `mapstructure:"mode"`
+    SourcePath   string        `mapstructure:"source_path"`
+    ProjectName  string        `mapstructure:"project_name"`
+    TikaServerURL string       `mapstructure:"tika_server_url"`
+    EmbAPIBase   string        `mapstructure:"emb_api_base"`
+    EmbModelID   string        `mapstructure:"emb_model_id"`
+    ChunkSize    int        	 `mapstructure:"chunk_size"`
+    ChunkOverlap int        	 `mapstructure:"chunk_overlap"`
+    Database     databaseCfg   `mapstructure:"database"`
 }
 
 func InitConfig() (*Config, error) {
@@ -52,26 +35,17 @@ func InitConfig() (*Config, error) {
     viper.SetConfigType("yaml")
 
     // Set default values
+		viper.SetDefault("database.database_type", "redis")
+    viper.SetDefault("database.database_url", "redis://localhost:6379")
+    viper.SetDefault("database.database_index", "redis_index")
     viper.SetDefault("mode", "development")
     viper.SetDefault("source_path", dataDir)
-    viper.SetDefault("llm_settings.provider", "ollama")
-    viper.SetDefault("llm_settings.model", "phi3:14b")
-    viper.SetDefault("llm_settings.temperature", 0.0)
     viper.SetDefault("project_name", "goetl")
-    viper.SetDefault("tika_server_url", "goetl")
-    viper.SetDefault("openrouter_api_base", "https://openrouter.ai/api/v1")
-    viper.SetDefault("openrouter_api_key", "your_openrouter_api_key")
-    viper.SetDefault("ollama_api_base", "http://localhost:11434")
+    viper.SetDefault("tika_server_url", "http://localhost:9998")
+    viper.SetDefault("emb_api_base", "http://localhost:11434")
     viper.SetDefault("emb_model_id", "nomic-embed-text")
-    viper.SetDefault("neo4j_uri", "bolt://localhost:7687")
-    viper.SetDefault("neo4j_username", "neo4j")
-    viper.SetDefault("neo4j_password", "your_neo4j_password")
-    viper.SetDefault("providers", map[string]ProviderConfig{
-        "openrouter": {BaseURL: "https://openrouter.ai/api/v1", APIKey: "your_openrouter_api_key"},
-        "ollama":     {BaseURL: "http://localhost:11434/v1", APIKey: "ollama"},
-        "openai":     {BaseURL: "https://api.openai.com", APIKey: "your_openai_api_key"},
-    })
-    viper.SetDefault("backend_cors_origins", []string{"*"})
+    viper.SetDefault("chunk_size", 512)
+    viper.SetDefault("chunk_overlap", 64)
 
     // Create config directory if it doesn't exist
     if _, err := os.Stat(configDir); os.IsNotExist(err) {
@@ -105,6 +79,29 @@ func InitConfig() (*Config, error) {
     var config Config
     if err := viper.Unmarshal(&config); err != nil {
         return nil, fmt.Errorf("could not unmarshal config: %w", err)
+    }
+
+		// Configure the database based on the type
+    switch config.Database.Type {
+    case "redis":
+        redisConfig := RedisConfig{
+            URL: viper.GetString("database.database_url"),
+            Index: viper.GetString("database.database_index"),
+        }
+        config.Database.Config = redisConfig
+
+    case "postgres":
+        postgresConfig := PostgresConfig{
+            URL:      viper.GetString("database.database_url"),
+            Username: viper.GetString("database.database_username"),
+            Password: viper.GetString("database.database_password"),
+            DBName:   viper.GetString("database.database_name"),
+            SSLMode:  viper.GetString("database.database_sslmode"),
+        }
+        config.Database.Config = postgresConfig
+
+    default:
+        return nil, fmt.Errorf("unsupported database type: %s", config.Database.Type)
     }
 
     return &config, nil

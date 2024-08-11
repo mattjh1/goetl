@@ -2,14 +2,21 @@ package transform
 
 import (
 	"context"
-	"fmt"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"github.com/google/go-tika/tika"
+	"github.com/tmc/langchaingo/schema"
 	"github.com/mattjh1/goetl/config/logger"
 	"github.com/mattjh1/goetl/config"
 )
 
-func parse(in <-chan string, out chan<- string, client *tika.Client) {
+func calculateChecksum(data string) string {
+	hash := sha256.New()
+	hash.Write([]byte(data))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+func parse(in <-chan string, out chan<- schema.Document, client *tika.Client) {
 	ctx := context.Background()
 
 	for filePath := range in {
@@ -18,22 +25,29 @@ func parse(in <-chan string, out chan<- string, client *tika.Client) {
 					logger.Log.Printf("Failed to open file %s: %v", filePath, err)
 					continue
 			}
-			defer file.Close()
+			func() {
+				defer file.Close()
+				text, err := client.Parse(ctx, file)
 
-			// Extract text from the file
-			text, err := client.Parse(ctx, file)
-			if err != nil {
-					logger.Log.Printf("Failed to parse file %s: %v", filePath, err)
-					continue
-			}
+				if err != nil {
+						logger.Log.Printf("Failed to parse file %s: %v", filePath, err)
+				}
 
-			fmt.Printf("Extracted Text from %s:\n%s\n", filePath, text)
-			out <- text
+				checksum := calculateChecksum(text)
+				doc := schema.Document{
+					PageContent: text,
+					Metadata: map[string]any{
+						"content_checksum": checksum,
+					},
+				}
+				out <- doc
+				}()
+
 	}
 	close(out)
 }
 
-func Transform(in <-chan string, out chan<- string, cfg *config.Config) {
+func Transform(in <-chan string, out chan<- schema.Document, cfg *config.Config) {
 	client := tika.NewClient(nil, cfg.TikaServerURL)
 	parse(in, out, client)
 }

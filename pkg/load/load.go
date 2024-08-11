@@ -1,39 +1,62 @@
 package load
 
 import (
-	"log"
 	"context"
+	"fmt"
 
 	"github.com/mattjh1/goetl/config"
+	"github.com/mattjh1/goetl/config/logger"
 	"github.com/tmc/langchaingo/schema"
-	"github.com/tmc/langchaingo/vectorstores/redisvector"
+	"github.com/tmc/langchaingo/textsplitter"
 )
 
-// Load processes transformed data and stores it into the VectorDB.
-func Load(ch <-chan string, cfg *config.Config) {
-	ctx := context.Background()
-	client, err := redisvector.NewRueidisClient("redis://127.0.0.1:6379")
-	if err != nil {
-		log.Fatalf("Failed to create Redis client: %v", err)
-	}
-	redisDB := NewRedisDB(client, ctx)
+func Load(ch <-chan schema.Document, cfg *config.Config) {
+    ctx := context.Background()
 
-	for transformedData := range ch {
-		log.Println("Loading transformed data:", transformedData)
-		
-		// Wrap transformed data into a schema.Document
-		doc := schema.Document{
-			PageContent: transformedData,
-		}
+    var db VectorDB
+		var err error
 
-		// Insert document embedding into Redis
-		err := redisDB.InsertEmbedding([]schema.Document{doc}, doc.PageContent, cfg)
-		if err != nil {
-			log.Printf("Failed to insert embedding for document %s: %v", doc.PageContent, err)
-			continue
-		}
+    switch cfg.Database.Type {
+    case "redis":
+        redisConfig, _ := cfg.Database.GetRedisConfig()
+        _, e := getEmbedding(cfg.EmbModelID, cfg.EmbAPIBase)
 
-		log.Printf("Successfully loaded document with ID: %s", doc.PageContent)
-	}
+        db, err = NewRedisDB(redisConfig, ctx, e)
+        if err != nil {
+            logger.Log.Fatalf("Failed to initialize RedisDB: %v", err)
+            return
+        }
+
+    case "postgres":
+        // TODO: Initialize Postgres connection with postgresConfig
+
+    default:
+        logger.Log.Fatalf("Unsupported database type: %s", cfg.Database.Type)
+        return
+    }
+
+    // Process and load the data
+    for transformedData := range ch {
+
+        // Split the document
+        splitter := textsplitter.NewRecursiveCharacter()
+        splitter.ChunkSize = cfg.ChunkSize
+        splitter.ChunkOverlap = cfg.ChunkOverlap
+
+        docs, err := textsplitter.SplitDocuments(splitter, []schema.Document{transformedData})
+        if err != nil {
+            logger.Log.Printf("Failed to split document: %v", err)
+            continue
+        }
+
+        // Generate document ID using the checksum
+        docID := fmt.Sprintf("%s", transformedData.Metadata["content_checksum"])
+
+        // Insert the embeddings into the database
+        err = db.InsertEmbedding(docs, docID)
+        if err != nil {
+            logger.Log.Printf("Failed to insert embedding for document: %v", err)
+            continue
+        }
+    }
 }
-
