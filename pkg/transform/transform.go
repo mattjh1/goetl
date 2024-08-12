@@ -22,7 +22,7 @@ func parse(in <-chan string, out chan<- schema.Document, client *tika.Client) {
 	for filePath := range in {
 			file, err := os.Open(filePath)
 			if err != nil {
-					logger.Log.Printf("Failed to open file %s: %v", filePath, err)
+					logger.Log.Errorf("Failed to open file %s: %w", filePath, err)
 					continue
 			}
 			func() {

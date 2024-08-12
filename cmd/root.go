@@ -39,14 +39,13 @@ func init() {
     rootCmd.Flags().String("chunk_overlap", "", "Text split chunk overlap")
 
     // Database related flags
-    rootCmd.Flags().String("database_type", "redis", "Database type (redis, postgres)")
-    rootCmd.Flags().String("database_url", "", "Database URL")
-    rootCmd.Flags().String("database_index", "", "Database Index")
-    rootCmd.Flags().String("database_username", "", "Database username (required for PostgreSQL)")
-    rootCmd.Flags().String("database_password", "", "Database password (required for PostgreSQL)")
-    rootCmd.Flags().String("database_name", "", "Database name (only required for PostgreSQL)")
-    rootCmd.Flags().String("database_sslmode", "disable", "Database SSL mode (only for PostgreSQL)")
-
+    rootCmd.Flags().String("type", "redis", "Database type (redis, postgres)")
+    rootCmd.Flags().String("url", "", "Database URL")
+    rootCmd.Flags().String("index", "", "Database Index")
+    rootCmd.Flags().String("username", "", "Database username (required for PostgreSQL)")
+    rootCmd.Flags().String("password", "", "Database password (required for PostgreSQL)")
+    rootCmd.Flags().String("name", "", "Database name (only required for PostgreSQL)")
+    rootCmd.Flags().String("sslmode", "disable", "Database SSL mode (only for PostgreSQL)")
 
     // Bind flags to Viper
     viper.BindPFlag("mode", rootCmd.Flags().Lookup("mode"))
@@ -60,13 +59,13 @@ func init() {
     viper.BindPFlag("chunk_overlap", rootCmd.Flags().Lookup("chunk_overlap"))
 
     // Bind database flags to Viper
-    viper.BindPFlag("database.database_type", rootCmd.Flags().Lookup("database_type"))
-    viper.BindPFlag("database.database_url", rootCmd.Flags().Lookup("database_url"))
-    viper.BindPFlag("database.database_index", rootCmd.Flags().Lookup("database_index"))
-    viper.BindPFlag("database.database_username", rootCmd.Flags().Lookup("database_username"))
-    viper.BindPFlag("database.database_password", rootCmd.Flags().Lookup("database_password"))
-    viper.BindPFlag("database.database_name", rootCmd.Flags().Lookup("database_name"))
-    viper.BindPFlag("database.database_sslmode", rootCmd.Flags().Lookup("database_sslmode"))
+    viper.BindPFlag("database.type", rootCmd.Flags().Lookup("type"))
+    viper.BindPFlag("database.url", rootCmd.Flags().Lookup("url"))
+    viper.BindPFlag("database.index", rootCmd.Flags().Lookup("index"))
+    viper.BindPFlag("database.username", rootCmd.Flags().Lookup("username"))
+    viper.BindPFlag("database.password", rootCmd.Flags().Lookup("password"))
+    viper.BindPFlag("database.name", rootCmd.Flags().Lookup("name"))
+    viper.BindPFlag("database.sslmode", rootCmd.Flags().Lookup("sslmode"))
 
     viper.BindPFlag("backend_cors_origins", rootCmd.Flags().Lookup("backend_cors_origins"))
 }

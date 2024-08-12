@@ -35,9 +35,9 @@ func InitConfig() (*Config, error) {
     viper.SetConfigType("yaml")
 
     // Set default values
-		viper.SetDefault("database.database_type", "redis")
-    viper.SetDefault("database.database_url", "redis://localhost:6379")
-    viper.SetDefault("database.database_index", "redis_index")
+		viper.SetDefault("database.type", "redis")
+    viper.SetDefault("database.url", "redis://localhost:6379")
+    viper.SetDefault("database.index", "redis_index")
     viper.SetDefault("mode", "development")
     viper.SetDefault("source_path", dataDir)
     viper.SetDefault("project_name", "goetl")
@@ -85,18 +85,18 @@ func InitConfig() (*Config, error) {
     switch config.Database.Type {
     case "redis":
         redisConfig := RedisConfig{
-            URL: viper.GetString("database.database_url"),
-            Index: viper.GetString("database.database_index"),
+            URL: viper.GetString("database.url"),
+            Index: viper.GetString("database.index"),
         }
         config.Database.Config = redisConfig
 
     case "postgres":
         postgresConfig := PostgresConfig{
-            URL:      viper.GetString("database.database_url"),
-            Username: viper.GetString("database.database_username"),
-            Password: viper.GetString("database.database_password"),
-            DBName:   viper.GetString("database.database_name"),
-            SSLMode:  viper.GetString("database.database_sslmode"),
+            URL:      viper.GetString("database.url"),
+            Username: viper.GetString("database.username"),
+            Password: viper.GetString("database.password"),
+            DBName:   viper.GetString("database.name"),
+            SSLMode:  viper.GetString("database.sslmode"),
         }
         config.Database.Config = postgresConfig
 
