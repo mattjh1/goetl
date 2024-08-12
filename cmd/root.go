@@ -30,8 +30,9 @@ func init() {
 
     rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goetl/goetl.yaml)")
     rootCmd.Flags().String("mode", "", "Mode of operation (e.g., development, production)")
-    rootCmd.Flags().String("project_name", "", "Project name")
-    rootCmd.Flags().String("source_path", "", "Source path string")
+    rootCmd.Flags().StringP("project_name","p", "", "Project name")
+    rootCmd.Flags().StringP("source_path","s", "", "Source path string")
+    rootCmd.Flags().StringP("glob_pattern","g", "", "File pattern (default is *.*)")
     rootCmd.Flags().String("tika_server_url", "", "Apache Tika server URL")
     rootCmd.Flags().String("emb_api_base", "", "Embedding API base URL")
     rootCmd.Flags().String("emb_model_id", "", "Embedding model ID")
@@ -39,11 +40,11 @@ func init() {
     rootCmd.Flags().String("chunk_overlap", "", "Text split chunk overlap")
 
     // Database related flags
-    rootCmd.Flags().String("type", "redis", "Database type (redis, postgres)")
-    rootCmd.Flags().String("url", "", "Database URL")
-    rootCmd.Flags().String("index", "", "Database Index")
-    rootCmd.Flags().String("username", "", "Database username (required for PostgreSQL)")
-    rootCmd.Flags().String("password", "", "Database password (required for PostgreSQL)")
+    rootCmd.Flags().StringP("type","t", "redis", "Database type (redis, postgres)")
+    rootCmd.Flags().StringP("url","u", "", "Database URL")
+    rootCmd.Flags().StringP("index","i", "", "Database Index")
+    rootCmd.Flags().StringP("username","U", "", "Database username (required for PostgreSQL)")
+    rootCmd.Flags().StringP("password","P", "", "Database password (required for PostgreSQL)")
     rootCmd.Flags().String("name", "", "Database name (only required for PostgreSQL)")
     rootCmd.Flags().String("sslmode", "disable", "Database SSL mode (only for PostgreSQL)")
 
@@ -52,6 +53,7 @@ func init() {
     viper.BindPFlag("project_name", rootCmd.Flags().Lookup("project_name"))
     viper.BindPFlag("api_str", rootCmd.Flags().Lookup("api_str"))
     viper.BindPFlag("source_path", rootCmd.Flags().Lookup("source_path"))
+    viper.BindPFlag("glob_pattern", rootCmd.Flags().Lookup("glob_pattern"))
     viper.BindPFlag("tika_server_url", rootCmd.Flags().Lookup("tika_server_url"))
     viper.BindPFlag("emb_api_base", rootCmd.Flags().Lookup("emb_api_base"))
     viper.BindPFlag("emb_model_id", rootCmd.Flags().Lookup("emb_model_id"))

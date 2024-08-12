@@ -38,7 +38,7 @@ func runETL(cfg *config.Config) {
 	transformedCh := make(chan schema.Document)
 	// TODO replace with cfg data
 	path := cfg.SourcePath
-	globPattern := "*.*"
+	globPattern := cfg.GlobPattern
 	since := time.Date(1970, 8, 1, 0, 0, 0, 0, time.UTC) // Example date
 
 	logger.Log.Info("Starting file extraction...")

@@ -11,6 +11,7 @@ import (
 type Config struct {
     Mode         string        `mapstructure:"mode"`
     SourcePath   string        `mapstructure:"source_path"`
+    GlobPattern  string        `mapstructure:"glob_pattern"`
     ProjectName  string        `mapstructure:"project_name"`
     TikaServerURL string       `mapstructure:"tika_server_url"`
     EmbAPIBase   string        `mapstructure:"emb_api_base"`
@@ -40,6 +41,7 @@ func InitConfig() (*Config, error) {
     viper.SetDefault("database.index", "redis_index")
     viper.SetDefault("mode", "development")
     viper.SetDefault("source_path", dataDir)
+    viper.SetDefault("glob_pattern", "*.*")
     viper.SetDefault("project_name", "goetl")
     viper.SetDefault("tika_server_url", "http://localhost:9998")
     viper.SetDefault("emb_api_base", "http://localhost:11434")
