@@ -19,6 +19,10 @@ func Load(ch <-chan schema.Document, cfg *config.Config) {
 		redisConfig, _ := cfg.Database.GetRedisConfig()
 		_, e := getEmbedding(cfg.EmbModelID, cfg.EmbAPIBase)
 
+		if e != nil {
+			logger.Log.Errorf("Failed to get embeddings: %v", e)
+		}
+
 		db, err = NewRedisDB(redisConfig, ctx, e)
 		if err != nil {
 			logger.Log.Fatalf("Failed to initialize RedisDB: %v", err)

@@ -1,39 +1,33 @@
 project_name: goetl
+version: 2
 
-build:
-  # Template for the output binaries' names
-  name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
-  # The main Go file
-  main: ./main.go
-  # Target platforms and architectures
-  goos:
-    - linux
-    - darwin
-    - windows
-  goarch:
-    - amd64
-    - arm64
-  flags:
-    - -s
-    - -w
+builds:
+  - id: goetl
+    main: ./main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+  - ldflags:
+      - -s -w -X "main.version={{.Env.RELEASE_VERSION}}"
+    binary: goetl
 
 archives:
-  # Defines the output archive format (e.g., .tar.gz, .zip)
-  - format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: release_archive
+    format: tar.gz
     files:
       - goetl
       - README.md
       - LICENSE
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
-  # Generates a checksums file
   name_template: "checksums.txt"
 
 release:
-  # Settings for the release process
   github:
     owner: mattjh1
     name: goetl
-    draft: false
-    prerelease: false
