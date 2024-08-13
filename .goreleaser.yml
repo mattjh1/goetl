@@ -11,11 +11,8 @@ builds:
     goarch:
       - amd64
       - arm64
-    flags:
-      - -s
-      - -w
-    ldflags:
-      - -X main.version={{.Version}}
+  - ldflags:
+      - -s -w -X "main.version={{.Env.RELEASE_VERSION}}"
     binary: goetl
 
 archives:
