@@ -4,20 +4,20 @@ package config
 // Starting off, only redis works
 
 type RedisConfig struct {
-    URL string `mapstructure:"database_url"`
+    URL string `mapstructure:"url"`
     Index string `mapstructure:"index"`
 }
 
 type PostgresConfig struct {
-    URL      string `mapstructure:"database_url"`
-    Username string `mapstructure:"database_username"`
-    Password string `mapstructure:"database_password"`
-    DBName   string `mapstructure:"database_name"`
-    SSLMode  string `mapstructure:"database_sslmode"`
+    URL      string `mapstructure:"url"`
+    Username string `mapstructure:"username"`
+    Password string `mapstructure:"password"`
+    DBName   string `mapstructure:"name"`
+    SSLMode  string `mapstructure:"sslmode"`
 }
 
 type databaseCfg struct {
-    Type   string      `mapstructure:"database_type"`
+    Type   string      `mapstructure:"type"`
     Config interface{} `mapstructure:"-"`
 }
 
