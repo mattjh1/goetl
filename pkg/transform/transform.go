@@ -10,6 +10,7 @@ import (
 	"github.com/tmc/langchaingo/textsplitter"
 	"github.com/mattjh1/goetl/config"
 	"github.com/mattjh1/goetl/config/logger"
+	"github.com/schollz/progressbar/v3"
 )
 
 func calculateChecksum(data string) string {
@@ -18,7 +19,7 @@ func calculateChecksum(data string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func parse(in <-chan string, out chan<- schema.Document, client *tika.Client, cfg *config.Config) {
+func parse(in <-chan string, out chan<- schema.Document, client *tika.Client, cfg *config.Config, progressbar *progressbar.ProgressBar) {
 	ctx := context.Background()
 
 	for filePath := range in {
@@ -52,18 +53,24 @@ func parse(in <-chan string, out chan<- schema.Document, client *tika.Client, cf
 				return
 			}
 
+			progressbar.ChangeMax(len(chunks))
+
 			// Process each chunk separately
 			for _, chunk := range chunks {
 				checksum := calculateChecksum(chunk.PageContent)
 				chunk.Metadata["content_checksum"] = checksum
 				out <- chunk
+				err := progressbar.Add(1)
+				if err != nil {
+					logger.Log.Errorf("Error updating transform progress bar: %v", err)
+				}
 			}
 		}()
 	}
 	close(out)
 }
 
-func Transform(in <-chan string, out chan<- schema.Document, cfg *config.Config) {
+func Transform(in <-chan string, out chan<- schema.Document, cfg *config.Config, transformBar *progressbar.ProgressBar) {
 	client := tika.NewClient(nil, cfg.TikaServerURL)
-	parse(in, out, client, cfg)
+	parse(in, out, client, cfg, transformBar)
 }

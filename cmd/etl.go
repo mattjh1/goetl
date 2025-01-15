@@ -8,8 +8,10 @@ import (
 	"github.com/mattjh1/goetl/config/logger"
 	"github.com/mattjh1/goetl/pkg/extract"
 	"github.com/mattjh1/goetl/pkg/load"
+	"github.com/mattjh1/goetl/pkg/utils"
 	"github.com/mattjh1/goetl/pkg/transform"
 	"github.com/spf13/cobra"
+	"github.com/schollz/progressbar/v3"
 	"github.com/tmc/langchaingo/schema"
 )
 
@@ -38,33 +40,41 @@ func runETL(cfg *config.Config) {
 	transformedCh := make(chan schema.Document)
 	path := cfg.SourcePath
 	globPattern := cfg.GlobPattern
-	// TODO replace with cfg data
-	since := time.Date(1970, 8, 1, 0, 0, 0, 0, time.UTC) // Example date
+	since := time.Date(1970, 8, 1, 0, 0, 0, 0, time.UTC)
 
-	logger.Log.Info("Starting file extraction...")
+	logger.Log.Info("Starting ETL process...")
 
+	totalFiles, err := utils.CountFilesInPath(path, globPattern)
+	if err != nil {
+		logger.Log.Errorf("Error counting files: %v", err)
+		return
+	}
+
+	// Create progress bars
+	extractBar := progressbar.Default(int64(totalFiles), "Extracting files")
+	transformBar := progressbar.Default(-1, "Transforming data") 
+
+	// Extraction
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		extract.Extract(dataCh, cfg, path, globPattern, since)
+		extract.Extract(dataCh, cfg, path, globPattern, since, extractBar)
 		logger.Log.Info("File extraction completed.")
 	}()
 
-	logger.Log.Info("Starting data transformation...")
-	
+	// Transformation
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		transform.Transform(dataCh, transformedCh, cfg)
+		transform.Transform(dataCh, transformedCh, cfg, transformBar)
 		logger.Log.Info("Data transformation completed.")
 	}()
 
-	logger.Log.Info("Starting data loading...")
-
+	// Loading
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		load.Load(transformedCh, cfg)
+			load.Load(transformedCh, cfg)
 		logger.Log.Info("Data loading completed.")
 	}()
 

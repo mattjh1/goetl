@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"github.com/schollz/progressbar/v3"
 
 	"github.com/mattjh1/goetl/config"
 	"github.com/mattjh1/goetl/config/logger"
@@ -44,7 +45,7 @@ func directory(path string, globPattern string, since time.Time) ([]string, erro
 }
 
 // Extract function that reads files from a directory and sends their paths to a channel
-func Extract(ch chan<- string, cfg *config.Config, path string, globPattern string, since time.Time) {
+func Extract(ch chan<- string, cfg *config.Config, path string, globPattern string, since time.Time, progressBar *progressbar.ProgressBar) {
 	logger.Log.Info("Starting file extraction...")
 	files, err := directory(path, globPattern, since)
 	if err != nil {
@@ -55,7 +56,10 @@ func Extract(ch chan<- string, cfg *config.Config, path string, globPattern stri
 	for _, file := range files {
 		logger.Log.Infof("Sending file to channel: %s", file)
 		ch <- file
+		err := progressBar.Add(1)
+		if err != nil {
+			logger.Log.Errorf("Error updating extract progress bar: %v", err)
+		}
 	}
 	close(ch)
-	logger.Log.Info("File extraction completed.")
 }

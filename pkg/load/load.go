@@ -3,6 +3,7 @@ package load
 import (
 	"context"
 	"fmt"
+
 	"github.com/mattjh1/goetl/config"
 	"github.com/mattjh1/goetl/config/logger"
 	"github.com/tmc/langchaingo/schema"
@@ -37,7 +38,7 @@ func Load(ch <-chan schema.Document, cfg *config.Config) {
 		return
 	}
 
-	// Process and load the data
+		// Process and load the data
 	for chunk := range ch {
 		// Generate document ID using the checksum
 		docID := fmt.Sprintf("%s", chunk.Metadata["content_checksum"])
